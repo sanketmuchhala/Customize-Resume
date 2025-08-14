@@ -1,0 +1,165 @@
+{
+  "personalInfo": {
+    "name": "John Smith",
+    "email": "john.smith@email.com",
+    "phone": "(555) 123-4567",
+    "location": "San Francisco, CA",
+    "linkedin": "linkedin.com/in/johnsmith",
+    "github": "github.com/johnsmith",
+    "website": "johnsmith.dev"
+  },
+  "summary": "Experienced software engineer with 5+ years of expertise in full-stack development, specializing in React, Node.js, and cloud technologies. Proven track record of delivering scalable web applications and leading development teams. Passionate about clean code, user experience, and continuous learning.",
+  "experience": [
+    {
+      "title": "Senior Software Engineer",
+      "company": "TechCorp Inc.",
+      "location": "San Francisco, CA",
+      "startDate": "January 2022",
+      "endDate": "Present",
+      "description": [
+        "Lead development of enterprise web applications using React, Node.js, and AWS"
+      ],
+      "achievements": [
+        "• Led a team of 6 developers to deliver a customer portal that increased user engagement by 40%",
+        "• Implemented microservices architecture that improved system performance by 60%",
+        "• Reduced deployment time from 2 hours to 15 minutes through CI/CD pipeline optimization",
+        "• Mentored 3 junior developers and conducted code reviews for team best practices"
+      ]
+    },
+    {
+      "title": "Full Stack Developer",
+      "company": "StartupXYZ",
+      "location": "San Francisco, CA",
+      "startDate": "March 2020",
+      "endDate": "December 2021",
+      "description": [
+        "Developed and maintained web applications using modern JavaScript frameworks"
+      ],
+      "achievements": [
+        "• Built responsive web applications using React, TypeScript, and Node.js",
+        "• Integrated third-party APIs and payment systems (Stripe, PayPal)",
+        "• Implemented automated testing with Jest and Cypress, achieving 90% code coverage",
+        "• Collaborated with design team to implement pixel-perfect UI/UX designs"
+      ]
+    },
+    {
+      "title": "Junior Developer",
+      "company": "Digital Solutions LLC",
+      "location": "Oakland, CA",
+      "startDate": "June 2019",
+      "endDate": "February 2020",
+      "description": [
+        "Contributed to web development projects and learned industry best practices"
+      ],
+      "achievements": [
+        "• Developed frontend components using HTML, CSS, and JavaScript",
+        "• Assisted in database design and SQL query optimization",
+        "• Participated in agile development processes and sprint planning",
+        "• Gained experience with Git version control and collaborative development"
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "Bachelor of Science in Computer Science",
+      "institution": "University of California, Berkeley",
+      "location": "Berkeley, CA",
+      "graduationDate": "May 2019",
+      "gpa": "3.8/4.0",
+      "relevant_coursework": [
+        "Data Structures and Algorithms",
+        "Software Engineering",
+        "Database Systems",
+        "Web Development",
+        "Machine Learning Fundamentals"
+      ]
+    }
+  ],
+  "skills": {
+    "technical": [
+      "JavaScript (ES6+)",
+      "TypeScript",
+      "React.js",
+      "Node.js",
+      "Python",
+      "SQL",
+      "AWS",
+      "Docker",
+      "Git",
+      "RESTful APIs",
+      "GraphQL",
+      "MongoDB",
+      "PostgreSQL",
+      "Redis",
+      "Jest",
+      "Cypress"
+    ],
+    "soft": [
+      "Team Leadership",
+      "Problem Solving",
+      "Communication",
+      "Agile Development",
+      "Code Review",
+      "Mentoring",
+      "Project Management"
+    ],
+    "languages": [
+      "English (Native)",
+      "Spanish (Conversational)"
+    ],
+    "certifications": [
+      "AWS Certified Developer Associate",
+      "Google Cloud Platform Fundamentals"
+    ]
+  },
+  "projects": [
+    {
+      "name": "E-Commerce Platform",
+      "description": "Full-stack e-commerce application with real-time inventory management, payment processing, and admin dashboard. Built with React, Node.js, and MongoDB.",
+      "technologies": [
+        "React",
+        "Node.js",
+        "MongoDB",
+        "Stripe API",
+        "Socket.io"
+      ],
+      "achievements": [
+        "• Handled 1000+ concurrent users during peak shopping periods",
+        "• Integrated multiple payment gateways with 99.9% uptime",
+        "• Implemented real-time inventory tracking and notifications"
+      ]
+    },
+    {
+      "name": "Task Management App",
+      "description": "Collaborative project management tool with real-time updates, file sharing, and team communication features. Features include drag-and-drop task management and progress tracking.",
+      "technologies": [
+        "React",
+        "TypeScript",
+        "Node.js",
+        "PostgreSQL",
+        "WebSockets"
+      ],
+      "achievements": [
+        "• Improved team productivity by 25% through streamlined task management",
+        "• Built intuitive drag-and-drop interface for task organization",
+        "• Implemented real-time collaboration features with conflict resolution"
+      ]
+    },
+    {
+      "name": "Weather Dashboard",
+      "description": "Interactive weather application that displays current conditions, forecasts, and historical data visualization. Includes location-based weather alerts and customizable widgets.",
+      "technologies": [
+        "React",
+        "D3.js",
+        "OpenWeather API",
+        "Geolocation API",
+        "PWA Features"
+      ],
+      "achievements": [
+        "• Created responsive design that works seamlessly on all devices",
+        "• Implemented offline functionality with service workers",
+        "• Built interactive data visualizations for weather trends"
+      ]
+    }
+  ]
+}
