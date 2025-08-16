@@ -21,12 +21,13 @@
 
         <!-- Main Application -->
         <main class="main-content">
-            <!-- Step 1: Input Section -->
-            <section class="input-section" id="inputSection">
-                <div class="section-header">
-                    <h2><i class="fas fa-upload"></i> Step 1: Upload Resume & Job Details</h2>
-                    <div class="step-indicator active">1</div>
-                </div>
+            <!-- Single Page Layout -->
+            <div class="single-page-layout">
+                <!-- Left Column: Input Section -->
+                <div class="input-column">
+                    <div class="section-header">
+                        <h2><i class="fas fa-upload"></i> Resume & Job Details</h2>
+                    </div>
 
                 <!-- API Configuration -->
                 <div class="api-config">
@@ -102,157 +103,106 @@
                     </div>
                 </div>
 
-                <!-- Customize Button -->
-                <div class="customize-section">
-                    <button type="button" id="customizeBtn" class="btn btn-primary btn-large" disabled>
-                        <i class="fas fa-magic"></i> Customize Resume with AI
-                    </button>
-                    <div class="requirements-check" id="requirementsCheck">
-                        <div class="requirement-item" data-requirement="api">
-                            <i class="fas fa-times-circle"></i> API key configured
-                        </div>
-                        <div class="requirement-item" data-requirement="file">
-                            <i class="fas fa-times-circle"></i> Resume uploaded
-                        </div>
-                        <div class="requirement-item" data-requirement="description">
-                            <i class="fas fa-times-circle"></i> Job description entered
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Step 2: Resume Editor Section -->
-            <section class="editor-section" id="editorSection" style="display: none;">
-                <div class="section-header">
-                    <h2><i class="fas fa-edit"></i> Step 2: Review & Edit Resume</h2>
-                    <div class="step-indicator">2</div>
-                </div>
-
-                <div class="editor-container">
-                    <div class="editor-tabs">
-                        <button class="tab-btn active" data-tab="json">JSON Editor</button>
-                        <button class="tab-btn" data-tab="preview">Preview</button>
-                    </div>
-
-                    <div class="tab-content">
-                        <div class="tab-pane active" id="jsonTab">
-                            <div class="editor-toolbar">
-                                <button type="button" id="resetResume" class="btn btn-secondary">
-                                    <i class="fas fa-undo"></i> Reset to Original
-                                </button>
-                                <button type="button" id="formatJson" class="btn btn-secondary">
-                                    <i class="fas fa-code"></i> Format JSON
-                                </button>
-                                <button type="button" id="validateJson" class="btn btn-secondary">
-                                    <i class="fas fa-check"></i> Validate
-                                </button>
+                    <!-- Customize Button -->
+                    <div class="customize-section">
+                        <button type="button" id="customizeBtn" class="btn btn-primary btn-large" disabled>
+                            <i class="fas fa-magic"></i> Customize Resume with AI
+                        </button>
+                        <div class="requirements-check" id="requirementsCheck">
+                            <div class="requirement-item" data-requirement="api">
+                                <i class="fas fa-times-circle"></i> API key configured
                             </div>
-                            <div id="jsonEditor" class="json-editor"></div>
-                        </div>
-
-                        <div class="tab-pane" id="previewTab">
-                            <div class="resume-preview" id="resumePreview">
-                                <div class="preview-placeholder">
-                                    <i class="fas fa-eye"></i>
-                                    <p>Resume preview will appear here</p>
-                                </div>
+                            <div class="requirement-item" data-requirement="file">
+                                <i class="fas fa-times-circle"></i> Resume uploaded
+                            </div>
+                            <div class="requirement-item" data-requirement="description">
+                                <i class="fas fa-times-circle"></i> Job description entered
                             </div>
                         </div>
                     </div>
                 </div>
-            </section>
 
-            <!-- Step 3: Output Section -->
-            <section class="output-section" id="outputSection" style="display: none;">
-                <div class="section-header">
-                    <h2><i class="fas fa-download"></i> Step 3: Generate & Download</h2>
-                    <div class="step-indicator">3</div>
-                </div>
-
-                <div class="output-container">
-                    <div class="output-tabs">
-                        <button class="tab-btn active" data-tab="customized">Customized JSON</button>
-                        <button class="tab-btn" data-tab="pdf">PDF Preview</button>
+                <!-- Right Column: Editor & Output -->
+                <div class="output-column">
+                    <div class="section-header">
+                        <h2><i class="fas fa-edit"></i> Resume Editor & Output</h2>
                     </div>
 
-                    <div class="tab-content">
-                        <div class="tab-pane active" id="customizedTab">
-                            <div class="customized-content">
-                                <h3>AI-Customized Resume</h3>
-                                <div class="customization-summary" id="customizationSummary">
-                                    <div class="summary-item">
-                                        <i class="fas fa-key"></i>
-                                        <span>Keywords integrated: <span id="keywordCount">0</span></span>
-                                    </div>
-                                    <div class="summary-item">
-                                        <i class="fas fa-chart-line"></i>
-                                        <span>Relevance score: <span id="relevanceScore">0%</span></span>
-                                    </div>
-                                    <div class="summary-item">
-                                        <i class="fas fa-clock"></i>
-                                        <span>Processing time: <span id="processingTime">0s</span></span>
-                                    </div>
-                                </div>
-                                <div class="download-actions">
-                                    <button type="button" id="downloadJson" class="btn btn-primary">
-                                        <i class="fas fa-download"></i> Download JSON
-                                    </button>
-                                    <button type="button" id="generatePdf" class="btn btn-success">
-                                        <i class="fas fa-file-pdf"></i> Generate PDF
-                                    </button>
-                                </div>
+                    <!-- Editor Section -->
+                    <div class="editor-section" id="editorSection">
+                        <div class="editor-container">
+                            <div class="editor-tabs">
+                                <button class="tab-btn active" data-tab="json">JSON Editor</button>
+                                <button class="tab-btn" data-tab="preview">Preview</button>
+                                <button class="tab-btn" data-tab="pdf">PDF Output</button>
                             </div>
-                        </div>
 
-                        <div class="tab-pane" id="pdfTab">
-                            <div class="pdf-content">
-                                <div class="template-selection">
-                                    <h3>Select PDF Template</h3>
-                                    <div class="template-options">
-                                        <label class="template-option">
-                                            <input type="radio" name="template" value="modern" checked>
-                                            <div class="template-card">
-                                                <div class="template-preview modern-preview"></div>
-                                                <span>Modern</span>
-                                            </div>
-                                        </label>
-                                        <label class="template-option">
-                                            <input type="radio" name="template" value="ats">
-                                            <div class="template-card">
-                                                <div class="template-preview ats-preview"></div>
-                                                <span>ATS-Friendly</span>
-                                            </div>
-                                        </label>
-                                        <label class="template-option">
-                                            <input type="radio" name="template" value="executive">
-                                            <div class="template-card">
-                                                <div class="template-preview executive-preview"></div>
-                                                <span>Executive</span>
-                                            </div>
-                                        </label>
+                            <div class="tab-content">
+                                <div class="tab-pane active" id="jsonTab">
+                                    <div class="editor-toolbar">
+                                        <button type="button" id="resetResume" class="btn btn-secondary btn-sm">
+                                            <i class="fas fa-undo"></i> Reset
+                                        </button>
+                                        <button type="button" id="formatJson" class="btn btn-secondary btn-sm">
+                                            <i class="fas fa-code"></i> Format
+                                        </button>
+                                        <button type="button" id="validateJson" class="btn btn-secondary btn-sm">
+                                            <i class="fas fa-check"></i> Validate
+                                        </button>
+                                        <div class="download-actions-inline">
+                                            <button type="button" id="downloadJson" class="btn btn-primary btn-sm">
+                                                <i class="fas fa-download"></i> Download JSON
+                                            </button>
+                                        </div>
                                     </div>
+                                    <div id="jsonEditor" class="json-editor-compact"></div>
                                 </div>
-                                <div class="pdf-preview-container">
-                                    <div id="pdfPreview" class="pdf-preview">
+
+                                <div class="tab-pane" id="previewTab">
+                                    <div class="resume-preview-compact" id="resumePreview">
                                         <div class="preview-placeholder">
-                                            <i class="fas fa-file-pdf"></i>
-                                            <p>PDF preview will appear here</p>
+                                            <i class="fas fa-eye"></i>
+                                            <p>Resume preview will appear here</p>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="pdf-actions">
-                                    <button type="button" id="downloadPdf" class="btn btn-primary" disabled>
-                                        <i class="fas fa-download"></i> Download PDF
-                                    </button>
-                                    <button type="button" id="regeneratePdf" class="btn btn-secondary">
-                                        <i class="fas fa-sync"></i> Regenerate PDF
-                                    </button>
+
+                                <div class="tab-pane" id="pdfTab">
+                                    <div class="pdf-content-compact">
+                                        <div class="template-selection-compact">
+                                            <label>Template:</label>
+                                            <select id="templateSelect" class="form-select-sm">
+                                                <option value="modern">Modern</option>
+                                                <option value="ats">ATS-Friendly</option>
+                                                <option value="executive">Executive</option>
+                                            </select>
+                                            <button type="button" id="generatePdf" class="btn btn-success btn-sm">
+                                                <i class="fas fa-file-pdf"></i> Generate PDF
+                                            </button>
+                                        </div>
+                                        <div class="pdf-preview-container-compact">
+                                            <div id="pdfPreview" class="pdf-preview-compact">
+                                                <div class="preview-placeholder">
+                                                    <i class="fas fa-file-pdf"></i>
+                                                    <p>PDF preview will appear here</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="pdf-actions-compact">
+                                            <button type="button" id="downloadPdf" class="btn btn-primary btn-sm" disabled>
+                                                <i class="fas fa-download"></i> Download PDF
+                                            </button>
+                                            <button type="button" id="regeneratePdf" class="btn btn-secondary btn-sm">
+                                                <i class="fas fa-sync"></i> Regenerate
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </section>
+            </div>
         </main>
 
         <!-- Progress Modal -->
@@ -321,14 +271,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/latex.js/0.12.6/latex.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <!-- Application Scripts -->
+    <script src="js/simple-pdf-generator.js"></script>
+    <script src="js/agentic-ai-handler.js"></script>
     <script src="js/app.js"></script>
     <script src="js/resume-parser.js"></script>
     <script src="js/ai-handler.js"></script>
-    <script src="js/pdf-generator.js"></script>
-    <script src="js/latex-templates.js"></script>
 </body>
 </html>

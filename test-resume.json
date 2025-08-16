@@ -1,0 +1,117 @@
+{
+  "personalInfo": {
+    "name": "John Doe",
+    "email": "john.doe@example.com",
+    "phone": "(555) 123-4567",
+    "location": "San Francisco, CA",
+    "linkedin": "linkedin.com/in/johndoe",
+    "github": "github.com/johndoe",
+    "website": "johndoe.dev"
+  },
+  "summary": "Experienced software engineer with 5+ years in full-stack development, specializing in React, Node.js, and cloud technologies. Passionate about building scalable applications and leading development teams.",
+  "experience": [
+    {
+      "title": "Senior Software Engineer",
+      "company": "TechCorp Inc.",
+      "location": "San Francisco, CA",
+      "startDate": "2022-01",
+      "endDate": "Present",
+      "description": [
+        "Led development of microservices architecture serving 1M+ users",
+        "Implemented CI/CD pipelines reducing deployment time by 70%",
+        "Mentored 3 junior developers and conducted code reviews"
+      ],
+      "achievements": [
+        "Increased application performance by 40% through optimization",
+        "Successfully launched 3 major product features on schedule"
+      ]
+    },
+    {
+      "title": "Software Engineer",
+      "company": "StartupXYZ",
+      "location": "San Francisco, CA",
+      "startDate": "2020-06",
+      "endDate": "2021-12",
+      "description": [
+        "Developed React-based dashboard for data visualization",
+        "Built RESTful APIs using Node.js and Express",
+        "Collaborated with design team to improve user experience"
+      ],
+      "achievements": [
+        "Reduced bug reports by 50% through comprehensive testing",
+        "Implemented real-time features using WebSocket technology"
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "Bachelor of Science in Computer Science",
+      "institution": "University of California, Berkeley",
+      "location": "Berkeley, CA",
+      "graduationDate": "2020-05",
+      "gpa": "3.8",
+      "relevant_coursework": [
+        "Data Structures and Algorithms",
+        "Software Engineering",
+        "Database Systems",
+        "Machine Learning"
+      ]
+    }
+  ],
+  "skills": {
+    "technical": [
+      "JavaScript",
+      "React",
+      "Node.js",
+      "Python",
+      "SQL",
+      "AWS",
+      "Docker",
+      "Git"
+    ],
+    "soft": [
+      "Leadership",
+      "Communication",
+      "Problem Solving",
+      "Team Collaboration"
+    ],
+    "languages": [
+      "English (Native)",
+      "Spanish (Conversational)"
+    ],
+    "certifications": [
+      "AWS Solutions Architect Associate",
+      "Certified Scrum Master"
+    ]
+  },
+  "projects": [
+    {
+      "name": "E-commerce Platform",
+      "description": "Full-stack e-commerce application with payment integration and inventory management",
+      "technologies": [
+        "React",
+        "Node.js",
+        "MongoDB",
+        "Stripe API"
+      ],
+      "achievements": [
+        "Processed $100K+ in transactions",
+        "Supported 500+ concurrent users"
+      ]
+    },
+    {
+      "name": "Data Analytics Dashboard",
+      "description": "Real-time dashboard for monitoring business metrics and KPIs",
+      "technologies": [
+        "React",
+        "D3.js",
+        "Express",
+        "PostgreSQL"
+      ],
+      "achievements": [
+        "Reduced decision-making time by 60%",
+        "Integrated with 5+ data sources"
+      ]
+    }
+  ]
+}

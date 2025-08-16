@@ -470,77 +470,167 @@ ${this.escapeLaTeX(summary)}${template.sectionSpacing}\n`;
      */
     async compileLaTeX(latexContent) {
         try {
-            if (this.latex) {
-                // Use LaTeX.js if available
-                return await this.compileWithLaTeXJS(latexContent);
-            } else {
-                // Fallback to PDF-lib for basic PDF generation
-                return await this.generateBasicPDF(latexContent);
-            }
-        } catch (error) {
-            console.error('LaTeX compilation failed, using fallback:', error);
+            // Always use PDF-lib for reliable generation
             return await this.generateBasicPDF(latexContent);
-        }
-    }
-
-    /**
-     * Compile LaTeX using LaTeX.js
-     * @param {string} latexContent - LaTeX content
-     * @returns {Promise<Blob>} PDF blob
-     */
-    async compileWithLaTeXJS(latexContent) {
-        try {
-            const result = await this.latex.compile(latexContent);
-            
-            if (result.pdf) {
-                return new Blob([result.pdf], { type: 'application/pdf' });
-            } else {
-                throw new Error('LaTeX.js compilation failed to produce PDF');
-            }
         } catch (error) {
-            throw new Error(`LaTeX.js compilation failed: ${error.message}`);
+            console.error('PDF generation failed:', error);
+            throw new Error(`PDF generation failed: ${error.message}`);
         }
     }
 
+
     /**
-     * Generate basic PDF using PDF-lib as fallback
+     * Generate basic PDF using PDF-lib
      * @param {string} latexContent - LaTeX content (converted to plain text)
      * @returns {Promise<Blob>} PDF blob
      */
     async generateBasicPDF(latexContent) {
         try {
             if (typeof PDFLib === 'undefined') {
-                throw new Error('PDF-lib not available for fallback PDF generation');
+                throw new Error('PDF-lib not available for PDF generation');
             }
 
-            // Convert LaTeX to plain text for basic PDF
-            const plainText = this.latexToPlainText(latexContent);
+            // Convert LaTeX to formatted resume text
+            const resumeText = this.latexToFormattedText(latexContent);
             
             // Create PDF document
             const pdfDoc = await PDFLib.PDFDocument.create();
-            const page = pdfDoc.addPage([612, 792]); // Letter size
+            let page = pdfDoc.addPage([612, 792]); // Letter size
             
-            // Add text content
-            const fontSize = 12;
-            const lineHeight = fontSize * 1.2;
+            // Font settings
+            const regularFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+            const boldFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+            
+            const fontSize = 11;
+            const headerFontSize = 16;
+            const sectionFontSize = 13;
+            const lineHeight = fontSize * 1.4;
+            const marginLeft = 50;
+            const marginRight = 50;
+            const pageWidth = 612;
+            const contentWidth = pageWidth - marginLeft - marginRight;
+            
             let y = 750;
             
-            const lines = plainText.split('\n');
-            for (const line of lines) {
-                if (line.trim()) {
-                    page.drawText(line.trim(), {
-                        x: 50,
-                        y: y,
-                        size: fontSize,
-                        color: PDFLib.rgb(0, 0, 0)
-                    });
-                    y -= lineHeight;
+            // Helper function to add new page
+            const addNewPage = () => {
+                page = pdfDoc.addPage([612, 792]);
+                y = 750;
+            };
+            
+            // Helper function to wrap text
+            const wrapText = (text, maxWidth, font, size) => {
+                const words = text.split(' ');
+                const lines = [];
+                let currentLine = '';
+                
+                for (const word of words) {
+                    const testLine = currentLine + (currentLine ? ' ' : '') + word;
+                    const width = font.widthOfTextAtSize(testLine, size);
+                    
+                    if (width <= maxWidth) {
+                        currentLine = testLine;
+                    } else {
+                        if (currentLine) lines.push(currentLine);
+                        currentLine = word;
+                    }
                 }
                 
-                if (y < 50) {
-                    // Add new page if needed
-                    const newPage = pdfDoc.addPage([612, 792]);
-                    y = 750;
+                if (currentLine) lines.push(currentLine);
+                return lines;
+            };
+            
+            // Process resume sections
+            const sections = resumeText.split('\n\n');
+            
+            for (const section of sections) {
+                if (!section.trim()) continue;
+                
+                const lines = section.split('\n');
+                const sectionTitle = lines[0];
+                
+                // Check if this is a header (name)
+                if (sectionTitle.toUpperCase() === sectionTitle && !sectionTitle.includes(':')) {
+                    // Main header (name)
+                    if (y < 100) addNewPage();
+                    
+                    page.drawText(sectionTitle, {
+                        x: marginLeft,
+                        y: y,
+                        size: headerFontSize,
+                        font: boldFont,
+                        color: PDFLib.rgb(0.2, 0.2, 0.2)
+                    });
+                    y -= headerFontSize * 1.5;
+                    
+                } else if (sectionTitle.includes(':') || sectionTitle.match(/^[A-Z][A-Z\s]+$/)) {
+                    // Section header
+                    if (y < 80) addNewPage();
+                    
+                    y -= 10; // Add some space before section
+                    
+                    page.drawText(sectionTitle.replace(':', ''), {
+                        x: marginLeft,
+                        y: y,
+                        size: sectionFontSize,
+                        font: boldFont,
+                        color: PDFLib.rgb(0.1, 0.1, 0.1)
+                    });
+                    
+                    // Draw underline
+                    page.drawLine({
+                        start: { x: marginLeft, y: y - 5 },
+                        end: { x: marginLeft + 200, y: y - 5 },
+                        thickness: 1,
+                        color: PDFLib.rgb(0.3, 0.3, 0.3)
+                    });
+                    
+                    y -= sectionFontSize * 1.5;
+                    
+                    // Process section content
+                    for (let i = 1; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (!line) continue;
+                        
+                        if (y < 50) addNewPage();
+                        
+                        // Check if line is a job title or subsection
+                        const isBold = line.includes('•') || 
+                                      (i === 1 && !line.includes('@') && !line.includes('|')) ||
+                                      line.match(/^[A-Za-z][^|@•]+$/) && !line.includes('(');
+                        
+                        const wrappedLines = wrapText(line, contentWidth, 
+                                                     isBold ? boldFont : regularFont, fontSize);
+                        
+                        for (const wrappedLine of wrappedLines) {
+                            if (y < 50) addNewPage();
+                            
+                            page.drawText(wrappedLine, {
+                                x: marginLeft + (line.startsWith('•') ? 15 : 0),
+                                y: y,
+                                size: fontSize,
+                                font: isBold ? boldFont : regularFont,
+                                color: PDFLib.rgb(0, 0, 0)
+                            });
+                            y -= lineHeight;
+                        }
+                    }
+                } else {
+                    // Regular text
+                    const wrappedLines = wrapText(section, contentWidth, regularFont, fontSize);
+                    
+                    for (const wrappedLine of wrappedLines) {
+                        if (y < 50) addNewPage();
+                        
+                        page.drawText(wrappedLine, {
+                            x: marginLeft,
+                            y: y,
+                            size: fontSize,
+                            font: regularFont,
+                            color: PDFLib.rgb(0, 0, 0)
+                        });
+                        y -= lineHeight;
+                    }
                 }
             }
             
@@ -549,32 +639,65 @@ ${this.escapeLaTeX(summary)}${template.sectionSpacing}\n`;
             return new Blob([pdfBytes], { type: 'application/pdf' });
             
         } catch (error) {
-            throw new Error(`Fallback PDF generation failed: ${error.message}`);
+            throw new Error(`PDF generation failed: ${error.message}`);
         }
     }
 
     /**
-     * Convert LaTeX content to plain text for fallback PDF
+     * Convert LaTeX content to formatted text for PDF
      * @param {string} latexContent - LaTeX content
-     * @returns {string} Plain text
+     * @returns {string} Formatted text
      */
-    latexToPlainText(latexContent) {
-        // Remove LaTeX commands and formatting
+    latexToFormattedText(latexContent) {
+        // Remove LaTeX document structure but preserve content structure
         let text = latexContent
-            .replace(/\\[a-zA-Z]+(\[[^\]]*\])?(\{[^}]*\})?/g, '') // Remove LaTeX commands
-            .replace(/\\%/g, '%') // Unescape percent signs
-            .replace(/\\_/g, '_') // Unescape underscores
-            .replace(/\\\{/g, '{') // Unescape braces
-            .replace(/\\\}/g, '}') // Unescape braces
-            .replace(/\\\$/g, '$') // Unescape dollar signs
-            .replace(/\\\&/g, '&') // Unescape ampersands
-            .replace(/\\\#/g, '#') // Unescape hash
-            .replace(/\\\~/g, '~') // Unescape tilde
-            .replace(/\\\^/g, '^') // Unescape caret
-            .replace(/\\\"/g, '"') // Unescape quotes
-            .replace(/\\'/g, "'") // Unescape single quotes
-            .replace(/\\\\/g, '\n') // Convert double backslash to newline
-            .replace(/\s+/g, ' ') // Normalize whitespace
+            // Remove document class and packages
+            .replace(/\\documentclass.*?\n/g, '')
+            .replace(/\\usepackage.*?\n/g, '')
+            .replace(/\\geometry.*?\n/g, '')
+            .replace(/\\definecolor.*?\n/g, '')
+            .replace(/\\titleformat.*?\n/g, '')
+            .replace(/\\newcommand.*?\n/g, '')
+            .replace(/\\begin\{document\}/g, '')
+            .replace(/\\end\{document\}/g, '')
+            .replace(/\\pagestyle.*?\n/g, '')
+            .replace(/\\thispagestyle.*?\n/g, '')
+            
+            // Convert resume header
+            .replace(/\\resumeHeader\{([^}]+)\}/g, '$1\n')
+            .replace(/\\contactInfo\{([^}]+)\}/g, '$1\n')
+            
+            // Convert sections
+            .replace(/\\resumeSection\{([^}]+)\}/g, '\n$1:\n')
+            .replace(/\\resumeSubsection\{([^}]+)\}/g, '\n$1\n')
+            
+            // Convert text formatting
+            .replace(/\\textbf\{([^}]+)\}/g, '$1')
+            .replace(/\\skillTag\{([^}]+)\}/g, '$1')
+            .replace(/\\fbox\{[^}]*([^}]+)\}/g, '$1')
+            
+            // Convert lists
+            .replace(/\\begin\{itemize\}.*?\n/g, '')
+            .replace(/\\end\{itemize\}/g, '')
+            .replace(/\\item\s+/g, '• ')
+            
+            // Convert icons and special characters
+            .replace(/\\faEnvelope\\?\s*/g, '📧 ')
+            .replace(/\\faPhone\\?\s*/g, '📞 ')
+            .replace(/\\faMapMarker\\?\s*/g, '📍 ')
+            .replace(/\\faLinkedin\\?\s*/g, '💼 ')
+            .replace(/\\faGithub\\?\s*/g, '🐙 ')
+            .replace(/\\faGlobe\\?\s*/g, '🌐 ')
+            
+            // Clean up spacing and formatting
+            .replace(/\\quad\s*/g, ' | ')
+            .replace(/\\\[.*?\]/g, '') // Remove spacing commands
+            .replace(/\\vspace\{[^}]*\}/g, '')
+            .replace(/\\\\/g, '\n') // Convert line breaks
+            .replace(/\\[a-zA-Z]+/g, '') // Remove remaining commands
+            .replace(/\{|\}/g, '') // Remove braces
+            .replace(/\n\s*\n\s*\n/g, '\n\n') // Normalize paragraph breaks
+            .replace(/^\s+|\s+$/gm, '') // Trim lines
             .trim();
         
         return text;

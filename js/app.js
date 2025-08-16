@@ -11,6 +11,8 @@ class ResumeCustomizerApp {
         this.apiKey = null;
         this.monacoEditor = null;
         this.currentStep = 1;
+        this.isProcessingFile = false;
+        this.isCustomizing = false;
         
         this.init();
     }
@@ -21,6 +23,12 @@ class ResumeCustomizerApp {
         this.setupDragAndDrop();
         this.checkRequirements();
         this.initializeMonacoEditor();
+        
+        // Only load sample resume in development mode
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            console.log('Development mode: Loading sample resume for testing');
+            this.loadSampleResume();
+        }
     }
 
     setupEventListeners() {
@@ -37,7 +45,14 @@ class ResumeCustomizerApp {
         document.getElementById('industryType').addEventListener('change', () => this.checkRequirements());
         
         // Customize Button
-        document.getElementById('customizeBtn').addEventListener('click', () => this.startCustomization());
+        document.getElementById('customizeBtn').addEventListener('click', (event) => {
+            // Ensure this is a user-initiated click
+            if (event.isTrusted) {
+                this.startCustomization();
+            } else {
+                console.log('Programmatic click detected - customization requires user interaction');
+            }
+        });
         
         // Editor Controls
         document.getElementById('resetResume').addEventListener('click', () => this.resetResume());
@@ -54,6 +69,9 @@ class ResumeCustomizerApp {
         document.getElementById('generatePdf').addEventListener('click', () => this.generatePdf());
         document.getElementById('downloadPdf').addEventListener('click', () => this.downloadPdf());
         document.getElementById('regeneratePdf').addEventListener('click', () => this.regeneratePdf());
+        
+        // Template Selection
+        document.getElementById('templateSelect').addEventListener('change', () => this.handleTemplateChange());
         
         // Modal Controls
         document.getElementById('closeErrorModal').addEventListener('click', () => this.hideErrorModal());
@@ -196,32 +214,58 @@ class ResumeCustomizerApp {
         const file = event.target.files[0];
         if (!file) return;
 
+        // Prevent duplicate processing
+        if (this.isProcessingFile) {
+            console.log('File already being processed, skipping...');
+            return;
+        }
+
         // Validate file
-        if (!this.validateFile(file)) return;
+        if (!this.validateFile(file)) {
+            event.target.value = ''; // Clear the input
+            return;
+        }
 
         try {
-            this.showProgressModal('Parsing resume...');
+            this.isProcessingFile = true;
+            this.showProgressModal('Processing resume file...');
+            this.updateProgress(10, 'Reading file content...');
             
-            // Parse the resume file
-            const resumeData = await window.resumeParser.parseFile(file);
+            // Parse the resume file with enhanced AI parsing
+            const resumeData = await window.resumeParser.parseFile(file, (progress, message) => {
+                this.updateProgress(10 + progress * 0.8, message);
+            });
             
             if (resumeData) {
                 this.originalResume = JSON.parse(JSON.stringify(resumeData));
                 this.currentResume = resumeData;
+                
+                this.updateProgress(90, 'Finalizing resume data...');
                 
                 // Update UI
                 this.updateFileInfo(file);
                 this.updateEditorContent();
                 this.updateResumePreview();
                 
-                this.hideProgressModal();
-                this.checkRequirements();
+                // Show the editor section
+                document.getElementById('editorSection').style.display = 'block';
                 
-                this.showSuccessMessage('Resume parsed successfully!');
+                this.updateProgress(100, 'Resume processing complete!');
+                
+                setTimeout(() => {
+                    this.hideProgressModal();
+                    this.checkRequirements();
+                    this.showSuccessMessage('Resume uploaded successfully! You can now enter a job description and customize your resume.');
+                    this.isProcessingFile = false;
+                }, 500);
+            } else {
+                this.isProcessingFile = false;
             }
         } catch (error) {
+            this.isProcessingFile = false;
             this.hideProgressModal();
             this.showError(`Failed to parse resume: ${error.message}`);
+            event.target.value = ''; // Clear the input on error
         }
     }
 
@@ -246,12 +290,13 @@ class ResumeCustomizerApp {
         const fileInfo = document.getElementById('fileInfo');
         const fileName = document.getElementById('fileName');
         const fileSize = document.getElementById('fileSize');
+        const fileUploadArea = document.getElementById('fileUploadArea');
         
-        fileName.textContent = file.name;
-        fileSize.textContent = this.formatFileSize(file.size);
+        if (fileName) fileName.textContent = file.name;
+        if (fileSize) fileSize.textContent = this.formatFileSize(file.size);
         
-        fileInfo.style.display = 'flex';
-        document.getElementById('fileUploadArea').style.display = 'none';
+        if (fileInfo) fileInfo.style.display = 'flex';
+        if (fileUploadArea) fileUploadArea.style.display = 'none';
     }
 
     formatFileSize(bytes) {
@@ -287,7 +332,7 @@ class ResumeCustomizerApp {
 
     handleJobDescriptionInput(event) {
         const charCount = document.getElementById('charCount');
-        charCount.textContent = event.target.value.length;
+        if (charCount) charCount.textContent = event.target.value.length;
         this.checkRequirements();
     }
 
@@ -315,35 +360,87 @@ class ResumeCustomizerApp {
         // Enable/disable customize button
         const customizeBtn = document.getElementById('customizeBtn');
         const allMet = Object.values(requirements).every(Boolean);
-        customizeBtn.disabled = !allMet;
+        
+        if (customizeBtn) {
+            customizeBtn.disabled = !allMet;
+            
+            // Update button text based on state
+            if (!requirements.api) {
+                customizeBtn.innerHTML = '<i class="fas fa-key"></i> Configure API Key First';
+            } else if (!requirements.file) {
+                customizeBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Resume First';
+            } else if (!requirements.description) {
+                customizeBtn.innerHTML = '<i class="fas fa-edit"></i> Enter Job Description';
+            } else {
+                customizeBtn.innerHTML = '<i class="fas fa-magic"></i> Customize Resume with AI';
+            }
+        }
 
         return allMet;
     }
 
     async startCustomization() {
+        // Prevent multiple simultaneous customizations
+        if (this.isCustomizing) {
+            console.log('Customization already in progress...');
+            return;
+        }
+
         if (!this.checkRequirements()) {
             this.showError('Please complete all requirements before proceeding');
             return;
         }
 
+        // Validate that we have a job description
+        const jobDescription = document.getElementById('jobDescription').value.trim();
+        if (!jobDescription) {
+            this.showError('Please enter a job description before customizing your resume');
+            return;
+        }
+
         try {
+            this.isCustomizing = true;
             this.showProgressModal('Starting AI customization...');
             this.updateProgress(0, 'Initializing...');
             
-            // Get job description
-            const jobDescription = document.getElementById('jobDescription').value.trim();
             const industryType = document.getElementById('industryType').value;
             
             // Start AI customization
-            this.updateProgress(25, 'Analyzing job requirements...');
+            this.updateProgress(5, 'Analyzing job requirements...');
             
-            const customizedData = await window.aiHandler.customizeResume(
-                this.currentResume,
-                jobDescription,
-                industryType,
-                this.apiKey,
-                (progress, message) => this.updateProgress(progress, message)
-            );
+            let customizedData;
+            try {
+                // Use agentic AI handler for better results with multi-step processing
+                if (window.agenticAIHandler) {
+                    customizedData = await window.agenticAIHandler.customizeResumeWithAgents(
+                        this.currentResume,
+                        jobDescription,
+                        industryType,
+                        this.apiKey,
+                        (progress, message) => this.updateProgress(progress, message)
+                    );
+                } else {
+                    // Fallback to original AI handler
+                    customizedData = await window.aiHandler.customizeResume(
+                        this.currentResume,
+                        jobDescription,
+                        industryType,
+                        this.apiKey,
+                        (progress, message) => this.updateProgress(progress, message)
+                    );
+                }
+            } catch (aiError) {
+                console.warn('AI customization failed, using original resume:', aiError);
+                this.updateProgress(90, 'AI customization failed, using original resume...');
+                
+                // Use original resume as fallback
+                customizedData = JSON.parse(JSON.stringify(this.originalResume));
+                
+                // Show warning to user
+                setTimeout(() => {
+                    this.showError(`AI customization failed: ${aiError.message}. You can still edit the resume manually and generate PDF.`);
+                }, 1000);
+            }
             
             if (customizedData) {
                 this.customizedResume = customizedData;
@@ -354,15 +451,25 @@ class ResumeCustomizerApp {
                 this.updateResumePreview();
                 this.showCustomizationSummary();
                 
-                // Move to next step
+                // Show editor section and switch to JSON tab
                 this.showStep(2);
+                this.switchToTab('json');
+                
+                // Enable PDF generation after customization
+                setTimeout(() => {
+                    this.switchToTab('pdf');
+                }, 1000);
                 
                 this.hideProgressModal();
-                this.showSuccessMessage('Resume customized successfully!');
+                this.showSuccessMessage(customizedData === this.originalResume ? 
+                    'Resume loaded for editing (AI customization was skipped)' : 
+                    'Resume customized successfully!');
             }
         } catch (error) {
             this.hideProgressModal();
             this.showError(`Customization failed: ${error.message}`);
+        } finally {
+            this.isCustomizing = false;
         }
     }
 
@@ -370,8 +477,28 @@ class ResumeCustomizerApp {
         const progressFill = document.getElementById('progressFill');
         const progressText = document.getElementById('progressText');
         
-        if (progressFill) progressFill.style.width = `${percentage}%`;
-        if (progressText) progressText.textContent = message;
+        if (progressFill) {
+            // Smooth animation
+            progressFill.style.transition = 'width 0.3s ease-in-out';
+            progressFill.style.width = `${Math.min(percentage, 100)}%`;
+            
+            // Color progression based on progress
+            if (percentage < 25) {
+                progressFill.style.backgroundColor = '#3b82f6'; // Blue
+            } else if (percentage < 50) {
+                progressFill.style.backgroundColor = '#8b5cf6'; // Purple
+            } else if (percentage < 75) {
+                progressFill.style.backgroundColor = '#f59e0b'; // Orange
+            } else {
+                progressFill.style.backgroundColor = '#10b981'; // Green
+            }
+        }
+        
+        if (progressText) {
+            progressText.textContent = message;
+        }
+        
+        console.log(`Progress: ${percentage}% - ${message}`);
         
         // Update step indicators
         if (percentage >= 25) this.updateStepStatus('parse', 'completed');
@@ -392,9 +519,13 @@ class ResumeCustomizerApp {
         const relevanceScore = this.calculateRelevanceScore();
         const processingTime = this.calculateProcessingTime();
         
-        document.getElementById('keywordCount').textContent = keywordCount;
-        document.getElementById('relevanceScore').textContent = `${relevanceScore}%`;
-        document.getElementById('processingTime').textContent = `${processingTime}s`;
+        const keywordElement = document.getElementById('keywordCount');
+        const relevanceElement = document.getElementById('relevanceScore');
+        const processingElement = document.getElementById('processingTime');
+        
+        if (keywordElement) keywordElement.textContent = keywordCount;
+        if (relevanceElement) relevanceElement.textContent = `${relevanceScore}%`;
+        if (processingElement) processingElement.textContent = `${processingTime}s`;
     }
 
     calculateKeywordCount() {
@@ -611,28 +742,29 @@ class ResumeCustomizerApp {
         // Update active tab content
         const tabContent = tabContainer.nextElementSibling;
         tabContent.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
-        tabContent.querySelector(`#${tabName}Tab`).classList.add('active');
+        const targetPane = tabContent.querySelector(`#${tabName}Tab`);
+        if (targetPane) {
+            targetPane.classList.add('active');
+        }
+        
+        // Auto-generate PDF if switching to PDF tab and we have resume data
+        if (tabName === 'pdf' && this.currentResume && !this.currentPdfBlob) {
+            setTimeout(() => this.generatePdf(), 500);
+        }
     }
 
     showStep(stepNumber) {
         this.currentStep = stepNumber;
         
-        // Hide all sections
-        document.getElementById('inputSection').style.display = 'none';
-        document.getElementById('editorSection').style.display = 'none';
-        document.getElementById('outputSection').style.display = 'none';
-        
-        // Show current section
-        document.getElementById(`${this.getStepName(stepNumber)}Section`).style.display = 'block';
-        
-        // Update step indicators
-        document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
-            if (index + 1 <= stepNumber) {
-                indicator.classList.add('active');
-            } else {
-                indicator.classList.remove('active');
+        // In single-page layout, just show the editor section and enable tabs
+        const editorSection = document.getElementById('editorSection');
+        if (stepNumber >= 2) {
+            editorSection.style.display = 'block';
+            // Switch to appropriate tab based on step
+            if (stepNumber === 3) {
+                this.switchToTab('pdf');
             }
-        });
+        }
     }
 
     getStepName(stepNumber) {
@@ -651,14 +783,14 @@ class ResumeCustomizerApp {
         }
 
         try {
-            const selectedTemplate = document.querySelector('input[name="template"]:checked').value;
+            const selectedTemplate = document.getElementById('templateSelect').value;
             const pdfPreview = document.getElementById('pdfPreview');
             
             pdfPreview.classList.add('loading');
-            pdfPreview.innerHTML = '';
+            pdfPreview.innerHTML = '<div class="preview-placeholder"><i class="fas fa-spinner fa-spin"></i><p>Generating PDF...</p></div>';
             
-            // Generate PDF using the PDF generator module
-            const pdfBlob = await window.pdfGenerator.generatePDF(this.currentResume, selectedTemplate);
+            // Generate PDF using the simple PDF generator
+            const pdfBlob = await window.simplePdfGenerator.generatePDF(this.currentResume, selectedTemplate);
             
             if (pdfBlob) {
                 // Create preview
@@ -675,8 +807,15 @@ class ResumeCustomizerApp {
                 this.showSuccessMessage('PDF generated successfully!');
             }
         } catch (error) {
+            console.error('PDF generation error:', error);
             document.getElementById('pdfPreview').classList.remove('loading');
-            document.getElementById('pdfPreview').classList.add('error');
+            document.getElementById('pdfPreview').innerHTML = `
+                <div class="preview-placeholder error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>PDF generation failed: ${error.message}</p>
+                    <button class="btn btn-secondary btn-sm" onclick="window.app.generatePdf()">Try Again</button>
+                </div>
+            `;
             this.showError(`PDF generation failed: ${error.message}`);
         }
     }
@@ -722,6 +861,21 @@ class ResumeCustomizerApp {
 
     regeneratePdf() {
         this.generatePdf();
+    }
+    
+    handleTemplateChange() {
+        // Auto-regenerate PDF when template changes if we already have a resume
+        if (this.currentResume && this.currentPdfBlob) {
+            this.generatePdf();
+        }
+    }
+    
+    switchToTab(tabName) {
+        // Find and click the appropriate tab
+        const tabBtn = document.querySelector(`[data-tab="${tabName}"]`);
+        if (tabBtn) {
+            tabBtn.click();
+        }
     }
 
     showProgressModal(message) {
@@ -799,6 +953,41 @@ class ResumeCustomizerApp {
             case 'help':
                 this.showErrorModal('Help & Support: Upload your resume, enter the job description, and click "Customize Resume with AI" to get started. Make sure to configure your Gemini API key first.');
                 break;
+        }
+    }
+
+    async loadSampleResume() {
+        try {
+            // Load the test resume for demonstration
+            const response = await fetch('test-resume.json');
+            if (response.ok) {
+                const resumeData = await response.json();
+                this.originalResume = JSON.parse(JSON.stringify(resumeData));
+                this.currentResume = resumeData;
+                
+                // Update UI
+                this.updateEditorContent();
+                this.updateResumePreview();
+                
+                // Show the editor section
+                document.getElementById('editorSection').style.display = 'block';
+                
+                // Show file as loaded
+                const fileInfo = document.getElementById('fileInfo');
+                const fileName = document.getElementById('fileName');
+                const fileSize = document.getElementById('fileSize');
+                const fileUploadArea = document.getElementById('fileUploadArea');
+                
+                if (fileName) fileName.textContent = 'test-resume.json (sample)';
+                if (fileSize) fileSize.textContent = '4.2 KB';
+                if (fileInfo) fileInfo.style.display = 'flex';
+                if (fileUploadArea) fileUploadArea.style.display = 'none';
+                
+                this.checkRequirements();
+                console.log('Sample resume loaded for testing');
+            }
+        } catch (error) {
+            console.log('Sample resume not found, user will need to upload manually');
         }
     }
 }

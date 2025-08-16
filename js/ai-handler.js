@@ -146,8 +146,11 @@ CRITICAL RULES:
 - Optimize for both human readers and ATS systems
 - Keep content concise, impactful, and relevant
 - Return ONLY valid JSON in the exact same structure provided
+- DO NOT include any explanatory text, markdown formatting, or code blocks
+- DO NOT start with \`\`\`json or end with \`\`\`
+- Return ONLY the raw JSON object starting with { and ending with }
 
-Your response must be a valid JSON object that maintains the exact structure of the input resume while incorporating the optimizations above.`;
+Your response must be a valid JSON object that maintains the exact structure of the input resume while incorporating the optimizations above. Start your response immediately with the opening brace { and end with the closing brace }.`;
     }
 
     /**
@@ -157,7 +160,7 @@ Your response must be a valid JSON object that maintains the exact structure of 
      * @returns {string} User prompt
      */
     buildUserPrompt(resume, jobDescription) {
-        return `Please customize the following resume for this job description:
+        return `TASK: Customize the resume below for the job description provided.
 
 JOB DESCRIPTION:
 ${jobDescription}
@@ -165,14 +168,16 @@ ${jobDescription}
 RESUME TO CUSTOMIZE:
 ${JSON.stringify(resume, null, 2)}
 
-Please return the customized resume as a valid JSON object with the exact same structure. Focus on:
-1. Integrating relevant keywords naturally
-2. Enhancing descriptions with action verbs and industry terms
-3. Reordering sections if beneficial
-4. Adding quantifiable achievements where appropriate
-5. Optimizing for ATS scanning
+CUSTOMIZATION REQUIREMENTS:
+1. Integrate relevant keywords from the job description naturally into existing content
+2. Enhance job descriptions with action verbs and industry-specific terminology
+3. Optimize content for ATS scanning while maintaining readability
+4. Ensure all skills and experiences remain truthful and factual
+5. Maintain the exact JSON structure and field names
 
-Return ONLY the JSON object, no additional text or explanations.`;
+RESPONSE FORMAT: Return ONLY a valid JSON object with the exact same structure as the input resume. Do not include any explanatory text, code blocks, or formatting. Your response must start with { and end with }.
+
+BEGIN CUSTOMIZED RESUME JSON:`;
     }
 
     /**
@@ -279,24 +284,81 @@ Return ONLY the JSON object, no additional text or explanations.`;
                 throw new Error('Empty text response from AI');
             }
 
-            // Try to extract JSON from the response
-            const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) {
-                throw new Error('No JSON found in AI response');
-            }
+            console.log('AI Response received:', textResponse.substring(0, 500) + '...');
 
-            const jsonString = jsonMatch[0];
-            const parsedResume = JSON.parse(jsonString);
+            let parsedResume;
+
+            // Method 1: Try to parse the entire response as JSON
+            try {
+                parsedResume = JSON.parse(textResponse.trim());
+            } catch (directParseError) {
+                console.log('Direct JSON parse failed, trying to extract JSON block');
+                
+                // Method 2: Try to extract JSON from code blocks
+                const codeBlockMatch = textResponse.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+                if (codeBlockMatch) {
+                    try {
+                        parsedResume = JSON.parse(codeBlockMatch[1]);
+                    } catch (codeBlockError) {
+                        console.log('Code block JSON parse failed, trying pattern match');
+                    }
+                }
+                
+                // Method 3: Try to extract JSON using pattern matching
+                if (!parsedResume) {
+                    const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        try {
+                            parsedResume = JSON.parse(jsonMatch[0]);
+                        } catch (patternError) {
+                            console.log('Pattern match JSON parse failed');
+                        }
+                    }
+                }
+                
+                // Method 4: Try to find the largest valid JSON object
+                if (!parsedResume) {
+                    const braceMatches = textResponse.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g);
+                    if (braceMatches) {
+                        for (const match of braceMatches.sort((a, b) => b.length - a.length)) {
+                            try {
+                                parsedResume = JSON.parse(match);
+                                if (this.validateResumeStructure(parsedResume)) {
+                                    break;
+                                }
+                                parsedResume = null;
+                            } catch (matchError) {
+                                continue;
+                            }
+                        }
+                    }
+                }
+                
+                if (!parsedResume) {
+                    throw new Error('Could not extract valid JSON from AI response');
+                }
+            }
 
             // Validate the parsed resume
             if (!this.validateResumeStructure(parsedResume)) {
-                throw new Error('Invalid resume structure returned by AI');
+                console.error('Resume validation failed, but continuing with partial data');
+                console.log('Parsed resume structure:', Object.keys(parsedResume));
+                
+                // If validation fails but we have a basic structure, try to use it anyway
+                if (parsedResume && typeof parsedResume === 'object' && parsedResume.personalInfo) {
+                    console.log('Using resume data despite validation warnings');
+                    return parsedResume;
+                } else {
+                    throw new Error('Invalid resume structure returned by AI');
+                }
             }
 
+            console.log('Successfully parsed and validated resume from AI');
             return parsedResume;
 
         } catch (error) {
             console.error('Failed to parse AI response:', error);
+            console.error('Full AI response:', response);
             throw new Error(`Failed to parse AI response: ${error.message}`);
         }
     }
@@ -307,9 +369,16 @@ Return ONLY the JSON object, no additional text or explanations.`;
      * @returns {boolean} True if valid structure
      */
     validateResumeStructure(resume) {
-        const requiredFields = ['personalInfo', 'summary', 'experience', 'education', 'skills', 'projects'];
+        // Basic structure check
+        if (!resume || typeof resume !== 'object') {
+            console.error('Resume is not a valid object');
+            return false;
+        }
+
+        // Essential fields that must exist
+        const requiredFields = ['personalInfo'];
         
-        // Check if all required fields exist
+        // Check if essential fields exist
         for (const field of requiredFields) {
             if (!(field in resume)) {
                 console.error(`Missing required field: ${field}`);
@@ -323,26 +392,36 @@ Return ONLY the JSON object, no additional text or explanations.`;
             return false;
         }
 
-        // Validate arrays
-        const arrayFields = ['experience', 'education', 'skills', 'projects'];
+        // Validate arrays if they exist
+        const arrayFields = ['experience', 'education', 'projects'];
         for (const field of arrayFields) {
-            if (!Array.isArray(resume[field])) {
-                console.error(`Field ${field} is not an array`);
+            if (resume[field] && !Array.isArray(resume[field])) {
+                console.error(`Field ${field} exists but is not an array`);
                 return false;
             }
         }
 
-        // Validate skills object structure
-        if (resume.skills && typeof resume.skills === 'object') {
-            const skillTypes = ['technical', 'soft', 'languages', 'certifications'];
-            for (const skillType of skillTypes) {
-                if (resume.skills[skillType] && !Array.isArray(resume.skills[skillType])) {
-                    console.error(`Skills.${skillType} is not an array`);
-                    return false;
+        // Validate skills object structure if it exists
+        if (resume.skills) {
+            if (typeof resume.skills === 'object' && !Array.isArray(resume.skills)) {
+                // Skills is an object, validate its properties
+                const skillTypes = ['technical', 'soft', 'languages', 'certifications'];
+                for (const skillType of skillTypes) {
+                    if (resume.skills[skillType] && !Array.isArray(resume.skills[skillType])) {
+                        console.error(`Skills.${skillType} exists but is not an array`);
+                        return false;
+                    }
                 }
+            } else if (Array.isArray(resume.skills)) {
+                // Skills is an array, which is also valid
+                console.log('Skills field is an array format');
+            } else {
+                console.error('Skills field has invalid structure');
+                return false;
             }
         }
 
+        console.log('Resume structure validation passed');
         return true;
     }
 

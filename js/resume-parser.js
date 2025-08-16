@@ -24,10 +24,13 @@ class ResumeParser {
     /**
      * Parse a resume file and convert to structured JSON
      * @param {File} file - The resume file to parse
+     * @param {Function} progressCallback - Progress callback function
      * @returns {Promise<Object>} Structured resume data
      */
-    async parseFile(file) {
+    async parseFile(file, progressCallback = null) {
         try {
+            if (progressCallback) progressCallback(20, 'Extracting text from file...');
+            
             const fileType = file.type;
             let textContent = '';
 
@@ -45,8 +48,14 @@ class ResumeParser {
                     throw new Error(`Unsupported file type: ${fileType}`);
             }
 
+            if (progressCallback) progressCallback(60, 'Converting to structured format...');
+
             // Parse the extracted text into structured JSON
-            return await this.parseTextToJSON(textContent);
+            const result = await this.parseTextToJSON(textContent, progressCallback);
+            
+            if (progressCallback) progressCallback(100, 'Resume parsing complete');
+            
+            return result;
         } catch (error) {
             console.error('Error parsing resume file:', error);
             throw new Error(`Failed to parse resume: ${error.message}`);
@@ -123,18 +132,24 @@ class ResumeParser {
     /**
      * Parse extracted text and convert to structured JSON
      * @param {string} text - Raw text content from resume
+     * @param {Function} progressCallback - Progress callback function
      * @returns {Promise<Object>} Structured resume data
      */
-    async parseTextToJSON(text) {
+    async parseTextToJSON(text, progressCallback = null) {
         try {
+            if (progressCallback) progressCallback(70, 'Using AI to parse resume...');
+            
             // Use AI to parse the text into structured format
             const parsedData = await this.parseWithAI(text);
+            
+            if (progressCallback) progressCallback(90, 'Validating resume structure...');
             
             // Validate and clean the parsed data
             return this.validateAndCleanResumeData(parsedData);
         } catch (error) {
             // Fallback to basic parsing if AI fails
             console.warn('AI parsing failed, using fallback parser:', error);
+            if (progressCallback) progressCallback(85, 'Using fallback parser...');
             return this.fallbackParse(text);
         }
     }
@@ -145,9 +160,146 @@ class ResumeParser {
      * @returns {Promise<Object>} Parsed resume data
      */
     async parseWithAI(text) {
-        // This would typically call an AI service
-        // For now, we'll use a basic parser as fallback
-        return this.fallbackParse(text);
+        try {
+            // Check if we have API key and AI handler available
+            const apiKey = localStorage.getItem('gemini_api_key');
+            if (!apiKey || !window.aiHandler) {
+                throw new Error('AI parsing not available');
+            }
+
+            console.log('Using AI to parse resume text to JSON...');
+            
+            // Create a specialized prompt for parsing resume text to JSON
+            const parsePrompt = this.buildParsePrompt(text);
+            
+            // Call Gemini API directly for parsing
+            const response = await window.aiHandler.callGeminiAPI(apiKey, parsePrompt, '');
+            
+            // Parse the AI response
+            const parsedData = this.parseAIParseResponse(response);
+            
+            return parsedData;
+            
+        } catch (error) {
+            console.warn('AI parsing failed:', error.message);
+            throw error;
+        }
+    }
+
+    /**
+     * Build prompt for parsing resume text to JSON
+     * @param {string} text - Raw resume text
+     * @returns {string} Parse prompt
+     */
+    buildParsePrompt(text) {
+        return `You are an expert resume parser. Your task is to convert the following raw resume text into a structured JSON format.
+
+IMPORTANT: Return ONLY valid JSON with the exact structure shown below. Do not include any explanatory text, markdown formatting, or code blocks.
+
+Required JSON Structure:
+{
+  "personalInfo": {
+    "name": "Full Name",
+    "email": "email@example.com",
+    "phone": "phone number",
+    "location": "City, State",
+    "linkedin": "linkedin profile",
+    "github": "github profile",
+    "website": "personal website"
+  },
+  "summary": "Professional summary or objective statement",
+  "experience": [
+    {
+      "title": "Job Title",
+      "company": "Company Name", 
+      "location": "City, State",
+      "startDate": "MM/YYYY",
+      "endDate": "MM/YYYY or Present",
+      "description": ["bullet point 1", "bullet point 2"],
+      "achievements": ["achievement 1", "achievement 2"]
+    }
+  ],
+  "education": [
+    {
+      "degree": "Degree Name",
+      "institution": "School Name",
+      "location": "City, State", 
+      "graduationDate": "MM/YYYY",
+      "gpa": "GPA if mentioned",
+      "relevant_coursework": ["course 1", "course 2"]
+    }
+  ],
+  "skills": {
+    "technical": ["skill1", "skill2"],
+    "soft": ["skill1", "skill2"], 
+    "languages": ["language1", "language2"],
+    "certifications": ["cert1", "cert2"]
+  },
+  "projects": [
+    {
+      "name": "Project Name",
+      "description": "Project description",
+      "technologies": ["tech1", "tech2"],
+      "achievements": ["achievement1", "achievement2"]
+    }
+  ]
+}
+
+RESUME TEXT TO PARSE:
+${text}
+
+Parse the above resume text and return ONLY the JSON object with the exact structure shown. Extract all available information and organize it properly. If a field is not found, use an empty string or empty array as appropriate.
+
+JSON OUTPUT:`;
+    }
+
+    /**
+     * Parse AI response for resume parsing
+     * @param {Object} response - AI response
+     * @returns {Object} Parsed resume data
+     */
+    parseAIParseResponse(response) {
+        try {
+            if (!response.candidates || response.candidates.length === 0) {
+                throw new Error('No response from AI');
+            }
+
+            const textResponse = response.candidates[0].content.parts[0].text;
+            console.log('AI Parse Response:', textResponse.substring(0, 200) + '...');
+
+            // Try to extract JSON from the response
+            let parsedData;
+            
+            // Method 1: Direct JSON parse
+            try {
+                parsedData = JSON.parse(textResponse.trim());
+            } catch (e) {
+                // Method 2: Extract JSON from code blocks
+                const codeBlockMatch = textResponse.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+                if (codeBlockMatch) {
+                    parsedData = JSON.parse(codeBlockMatch[1]);
+                } else {
+                    // Method 3: Find JSON object
+                    const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        parsedData = JSON.parse(jsonMatch[0]);
+                    } else {
+                        throw new Error('No valid JSON found in AI response');
+                    }
+                }
+            }
+
+            // Validate the structure
+            if (!parsedData.personalInfo) {
+                throw new Error('Invalid resume structure from AI');
+            }
+
+            return parsedData;
+
+        } catch (error) {
+            console.error('Failed to parse AI response:', error);
+            throw new Error(`AI parsing failed: ${error.message}`);
+        }
     }
 
     /**
