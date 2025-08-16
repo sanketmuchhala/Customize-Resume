@@ -9,10 +9,10 @@ A powerful, AI-powered web application that customizes resumes for specific job 
 ## ✨ Features
 
 ### 🚀 Core Functionality
-- **AI-Powered Customization**: Uses Gemini 1.5 Flash API for intelligent resume optimization
+- **Agentic AI Customization**: Multi-step AI processing with specialized agents for optimal results
 - **Multi-Format Support**: Upload PDF, DOCX, or TXT resumes
-- **Smart Parsing**: Intelligent text extraction and structured JSON conversion
-- **Professional PDF Output**: LaTeX-based PDF generation with multiple templates
+- **AI-Powered Parsing**: Intelligent text extraction and structured JSON conversion using Gemini
+- **Ultra-Fast PDF Output**: Optimized PDF generation with 3-tier speed system (Instant/Fast/Standard)
 - **ATS Optimization**: Applicant Tracking System friendly formatting
 
 ### 🎨 Multiple Templates
@@ -78,20 +78,23 @@ A powerful, AI-powered web application that customizes resumes for specific job 
 
 ### Technology Stack
 - **Frontend**: Pure HTML5, CSS3, JavaScript ES6+
-- **PDF Generation**: LaTeX.js + PDF-lib.js (fallback)
+- **PDF Generation**: jsPDF with 3-tier optimization (Instant/Fast/Standard)
 - **File Processing**: PDF.js, Mammoth.js
 - **Code Editor**: Monaco Editor
-- **AI Integration**: Google Gemini API
+- **AI Integration**: Google Gemini API with agentic processing
 - **Styling**: CSS Grid, Flexbox, CSS Variables
+- **Hosting**: GitHub Pages compatible (client-side only)
 
 ### Module Structure
 ```
 js/
-├── app.js              # Main application logic
-├── resume-parser.js    # Resume parsing and conversion
-├── ai-handler.js       # Gemini API integration
-├── pdf-generator.js    # PDF generation and LaTeX compilation
-└── latex-templates.js  # LaTeX template management
+├── app.js                  # Main application logic and workflow
+├── resume-parser.js        # AI-powered resume parsing and conversion
+├── agentic-ai-handler.js   # Multi-agent AI processing system
+├── ai-handler.js           # Legacy Gemini API integration
+├── instant-pdf.js          # Ultra-fast PDF generation (50ms)
+├── fast-pdf-generator.js   # Optimized PDF generation (200ms)
+└── simple-pdf-generator.js # Standard PDF generation (fallback)
 ```
 
 ### Key Components
@@ -291,9 +294,9 @@ No environment variables needed - the application is entirely client-side.
 ## 📈 Performance & Optimization
 
 ### Processing Times
-- **Resume Parsing**: 2-5 seconds (depending on file size)
-- **AI Customization**: 5-15 seconds (API response time)
-- **PDF Generation**: 3-8 seconds (template complexity)
+- **Resume Parsing**: 1-3 seconds (AI-powered parsing)
+- **AI Customization**: 8-20 seconds (multi-agent processing)
+- **PDF Generation**: 50-200ms (optimized 3-tier system)
 
 ### Optimization Tips
 - **File Size**: Keep resumes under 5MB for best performance

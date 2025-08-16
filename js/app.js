@@ -786,11 +786,59 @@ class ResumeCustomizerApp {
             const selectedTemplate = document.getElementById('templateSelect').value;
             const pdfPreview = document.getElementById('pdfPreview');
             
-            pdfPreview.classList.add('loading');
-            pdfPreview.innerHTML = '<div class="preview-placeholder"><i class="fas fa-spinner fa-spin"></i><p>Generating PDF...</p></div>';
+            // Immediate feedback
+            console.log('Starting PDF generation...');
             
-            // Generate PDF using the simple PDF generator
-            const pdfBlob = await window.simplePdfGenerator.generatePDF(this.currentResume, selectedTemplate);
+            pdfPreview.classList.add('loading');
+            
+            // Show rapid progress for PDF generation
+            const progressSteps = [
+                'Initializing PDF generator...',
+                'Processing resume data...',
+                'Formatting content...',
+                'Rendering PDF...',
+                'Finalizing document...'
+            ];
+            
+            let stepIndex = 0;
+            const updatePdfProgress = () => {
+                if (stepIndex < progressSteps.length) {
+                    pdfPreview.innerHTML = `<div class="preview-placeholder"><i class="fas fa-spinner fa-spin"></i><p>${progressSteps[stepIndex]}</p></div>`;
+                    stepIndex++;
+                }
+            };
+            
+            // Show progress updates every 100ms
+            updatePdfProgress();
+            const progressInterval = setInterval(updatePdfProgress, 100);
+            
+            // Try multiple PDF generators in order of speed
+            let pdfBlob;
+            const startTime = performance.now();
+            
+            try {
+                // Try instant PDF first (super fast)
+                console.log('Attempting instant PDF generation...');
+                if (window.InstantPDF) {
+                    pdfBlob = window.InstantPDF.generatePreview(this.currentResume);
+                    console.log(`Instant PDF generated in ${(performance.now() - startTime).toFixed(2)}ms`);
+                } else {
+                    throw new Error('InstantPDF not available');
+                }
+            } catch (instantError) {
+                console.log('Instant PDF failed, trying fast generator...');
+                try {
+                    pdfBlob = await window.fastPdfGenerator.generatePDF(this.currentResume, selectedTemplate);
+                    console.log(`Fast PDF generated in ${(performance.now() - startTime).toFixed(2)}ms`);
+                } catch (fastError) {
+                    console.warn('Fast PDF generator failed, falling back to standard generator:', fastError);
+                    pdfBlob = await window.simplePdfGenerator.generatePDF(this.currentResume, selectedTemplate);
+                    console.log(`Standard PDF generated in ${(performance.now() - startTime).toFixed(2)}ms`);
+                }
+            }
+            
+            // Clear progress interval
+            clearInterval(progressInterval);
             
             if (pdfBlob) {
                 // Create preview
