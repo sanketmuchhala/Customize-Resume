@@ -6,6 +6,10 @@ A powerful, AI-powered web application that customizes resumes for specific job 
 ![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Ready-green?style=for-the-badge&logo=github)
 ![Pure JavaScript](https://img.shields.io/badge/Pure%20JavaScript-ES6+-yellow?style=for-the-badge&logo=javascript)
 
+<img width="1680" height="1050" alt="Screenshot 2025-09-14 at 12 21 23 AM" src="https://github.com/user-attachments/assets/87b38c6a-c471-4688-908a-a93177be9645" />
+<img width="1680" height="1050" alt="Screenshot 2025-09-14 at 12 21 31 AM" src="https://github.com/user-attachments/assets/2a2b507e-924e-4be1-9dfc-ecb6ceb0e1ed" />
+
+
 ## ✨ Features
 
 ### 🚀 Core Functionality
